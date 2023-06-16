@@ -38,8 +38,20 @@ app.get('/productos', (req, res) => {
       return;
     }
     res.json(results);
+    
   });
 });
+app.get('/productosAdmin', (req, res) => {
+  connection.query('CALL verProductos', (err, results) => {
+    if (err) {
+      console.error('Error al obtener los productos:', err);
+      res.status(500).json({ error: 'Error al obtener los productos' });
+      return;
+    }
+    res.json(results);
+  });
+});
+
 app.get('/productos/:id', (req, res) => {
   const productId = req.params.id;
   connection.query('SELECT * FROM productos WHERE id = ?', [productId], (err, results) => {
@@ -50,6 +62,22 @@ app.get('/productos/:id', (req, res) => {
     }
     if (results.length === 0) {
       res.status(404).json({ error: 'Producto no encontrado' });
+      return;
+    }
+    res.json(results[0]);
+  });
+});
+
+app.get('/productosAdmin/:id', (req, res) => {
+  const productId = req.params.id;
+  connection.query('CALL verProductoUnico(?)', [productId], (err, results) => {
+    if (err) {
+      console.error('Error al obtener la producto:', err);
+      res.status(500).json({ error: 'Error al obtener el producto' });
+      return;
+    }
+    if (results.length === 0) {
+      res.status(404).json({ error: 'Producto no encontrada' });
       return;
     }
     res.json(results[0]);
@@ -67,6 +95,17 @@ app.get('/categorias', (req, res) => {
     res.json(results);
   });
 });
+app.get('/estados', (req, res) => {
+  connection.query('SELECT * FROM estados', (err, results) => {
+    if (err) {
+      console.error('Error al obtener los estados:', err);
+      res.status(500).json({ error: 'Error al obtener los estados' });
+      return;
+    }
+    res.json(results);
+    console.log(results);
+  });
+});
 
 app.get('/categorias/:id', (req, res) => {
   const categoryId = req.params.id;
@@ -81,6 +120,18 @@ app.get('/categorias/:id', (req, res) => {
       return;
     }
     res.json(results[0]);
+  });
+});
+
+app.post('/categorias', (req, res) => {
+  const {nombre,descripcion} = req.body; 
+  connection.query('INSERT categorias values (default,?,?,1)', [nombre,descripcion], (err, result) => {
+    if (err) {
+      console.error('Error al crear la categoría:', err);
+      res.status(500).json({ error: 'Error al crear la categoría' });
+      return;
+    }
+    res.status(201).json({ message: 'Categoría creada exitosamente' });
   });
 });
 
@@ -112,7 +163,31 @@ app.delete('/categorias/:id', (req, res) => {
     res.json({ message: 'Eliminado exitosamente' });
   });
 });
+app.delete('/productos/:id', (req, res) => {
+  const productoId = req.params.id;
+  console.log(productoId);
+  connection.query(`UPDATE productos SET status_producto = 0 where id_producto= ?`, [productoId], (err, result) => {
+    if (err) {
+      console.error('Error:', err);
+      res.status(500).json({ error: 'Error' });
+      return;
+    }
+    
+    res.json({ message: 'Eliminado exitosamente' });
+  });
+});
 
+app.post('/productos', (req, res) => {
+  const {nombre, precio, imagen,disponibles,categoria} = req.body; 
+  connection.query('CALL insertarProductos(?,?,?,?,?)', [nombre, precio, imagen,disponibles,categoria], (err, result) => {
+    if (err) {
+      console.error('Error al crear el Producto:', err);
+      res.status(500).json({ error: 'Error al crear el Producto' });
+      return;
+    }
+    res.status(201).json({ message: 'Producto creado exitosamente' });
+  });
+});
 
 
 
@@ -128,6 +203,21 @@ app.post('/venta', (req, res) => {
     res.status(201).json({ message: 'Categoría creada exitosamente' });
   });
 });
+
+app.put('/productosAdmin/:id', (req, res) => {
+  const idProducto = req.params.id;
+  const {nombreProducto, precioProducto, stockProducto, nombreCategoria } = req.body;
+  connection.query(`call actualizarProductos(?,?,?,?,?)`, [nombreProducto, precioProducto, stockProducto, nombreCategoria,idProducto], (err, result) => {
+    if (err) {
+      console.error('Error:', err);
+      res.status(500).json({ error: 'Error' });
+      return;
+    }
+    res.json({ message: 'Actualizado Exitosamente' });
+  });
+});
+
+
 
 app.put('/productos/:id', (req, res) => {
   // console.log(req.params.id,req.body);
