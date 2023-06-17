@@ -106,6 +106,17 @@ app.get('/estados', (req, res) => {
     console.log(results);
   });
 });
+app.get('/usuarios', (req, res) => {
+  connection.query('CALL obtenerUsuarios()', (err, results) => {
+    if (err) {
+      console.error('Error al obtener los estados:', err);
+      res.status(500).json({ error: 'Error al obtener los estados' });
+      return;
+    }
+    res.json(results);
+    console.log(results);
+  });
+});
 
 app.get('/categorias/:id', (req, res) => {
   const categoryId = req.params.id;
