@@ -2,6 +2,9 @@ const express = require('express');
 const mysql = require('mysql');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const multer = require('multer');
+const path = require('path');
+
 
 const app = express();
 app.use(cors());
@@ -29,6 +32,28 @@ connection.connect((err) => {
   }
   console.log('Conexión exitosa a la base de datos');
 });
+
+
+// Configuración de Multer para el almacenamiento de archivos
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'images/');
+  },
+  filename: function (req, file, cb) {
+    // const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const extension = path.extname(file.originalname);
+    cb(null, file.originalname);
+  }
+});
+const upload = multer({ storage: storage });
+// Ruta de endpoint para la carga de archivos
+app.post('/api/upload', upload.single('image'), (req, res) => {
+  // Aquí puedes realizar cualquier lógica adicional que necesites, como almacenar información del archivo en una base de datos, etc.
+
+  res.status(200).json({ message: 'Image uploaded successfully' });
+});
+// Endpoint para servir imágenes
+app.use('/images', express.static(path.join(__dirname, 'images')));
 
 app.get('/productos', (req, res) => {
   connection.query('SELECT * FROM productos', (err, results) => {
@@ -189,8 +214,9 @@ app.delete('/productos/:id', (req, res) => {
 });
 
 app.post('/productos', (req, res) => {
-  const {nombre, precio, imagen,disponibles,categoria} = req.body; 
-  connection.query('CALL insertarProductos(?,?,?,?,?)', [nombre, precio, imagen,disponibles,categoria], (err, result) => {
+  const {nombre, precio, imagenName,disponibles,categoria} = req.body; 
+  console.log({nombre, precio, imagenName,disponibles,categoria});
+  connection.query('CALL insertarProductos(?,?,?,?,?)', [nombre, precio, imagenName,disponibles,categoria], (err, result) => {
     if (err) {
       console.error('Error al crear el Producto:', err);
       res.status(500).json({ error: 'Error al crear el Producto' });
